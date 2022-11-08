@@ -9,12 +9,14 @@ exports.userCreate = async (req, res) => {
     const authHeader = req.headers['authorization']
     const token = authHeader && authHeader.split(' ')[1]
 
-    if (token == null) return sendError(res, 'Необходимо авторизоваться как старший продавец')
+    if (token == null) return sendError(res, '', 401) // unauthorized
 
     jwt.verify(token, process.env.TOKEN_SECRET, (err, user) => {
         console.log(err)
 
-        if (err) return 
+        if (err) return sendError(res, '', 403) // forbidden
+
+        next()
     })
 
     const {
