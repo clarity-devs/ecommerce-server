@@ -20,9 +20,6 @@ exports.validateUserCreation = [
     checkRequiredString('firstName').isLength({ min: 1, max: 20 }).withMessage('Короткое имя'),
     checkRequiredString('lastName').isLength({ min: 1, max: 20 }).withMessage('Короткая фамилия'),
     checkRequiredString('phone'),
-    check('address').optional(),
-    checkRequiredString('address.city'),
-    checkRequiredString('address.street'),
     check('dob').optional().trim().not().isEmpty().withMessage('Поле обязательное').isString().withMessage('Поле должно быть строкой')
 ]
 

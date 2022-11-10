@@ -1,5 +1,8 @@
 const mongoose = require('mongoose')
 const bcrypt = require('bcrypt')
+require('dotenv').config()
+
+const { BCRYPT_SALT } = process.env
 
 const resetTokenSchema = new mongoose.Schema({
     owner: {
@@ -20,7 +23,7 @@ const resetTokenSchema = new mongoose.Schema({
 
 resetTokenSchema.pre('save', async next => {
     if (this.isModified('token')) {
-        const hash = bcrypt.hash(this.token, 8)
+        const hash = bcrypt.hash(this.token, BCRYPT_SALT)
         this.token = hash
     }
 
