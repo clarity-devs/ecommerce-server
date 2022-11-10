@@ -9,16 +9,24 @@ const checkRequiredString = field => check(field)
     .isString().withMessage(`Поле должно быть строкой`)
 
 exports.validateUserCreation = [
-    checkRequiredString('role'),
-    check('email').normalizeEmail().isEmail().withMessage('Неверный формат почты').isString().withMessage('Поле должно быть строкой'),
+    checkRequiredString('role').custom((value, { req }) => {
+        const roles = ['employee', 'owner', 'senior']
+        if (!roles.includes(value)) {
+            return false
+        }
+        return true
+    }).withMessage('Недопустимая роль'),
+    check('email').normalizeEmail().toLowerCase().isEmail().withMessage('Неверный формат почты').isString().withMessage('Поле должно быть строкой'),
     checkRequiredString('password').isLength({ min: 8, max: 20 }).withMessage('Короткий пароль'),
     checkRequiredString('confirmPassword').custom((value, { req }) => {
-        if (value !== req.body.password)
-            throw new Error('Пароли не совпадают')
+        if (value !== req.body.password) {
+            console.log('Пароли не совпадают')
+            return false
+        }
         return true
     }),
-    checkRequiredString('firstName').isLength({ min: 1, max: 20 }).withMessage('Короткое имя'),
-    checkRequiredString('lastName').isLength({ min: 1, max: 20 }).withMessage('Короткая фамилия'),
+    checkRequiredString('name').isLength({ min: 1, max: 20 }).withMessage('Короткое имя'),
+    checkRequiredString('surname').isLength({ min: 1, max: 20 }).withMessage('Короткая фамилия'),
     checkRequiredString('phone'),
     check('dob').optional().trim().not().isEmpty().withMessage('Поле обязательное').isString().withMessage('Поле должно быть строкой')
 ]
@@ -37,7 +45,8 @@ exports.userValidation = (req, res, next) => {
 
 exports.validateUserLogin = [
     check('email').normalizeEmail().isEmail().withMessage('Почта или пароль не верны!'),
-    check('password').trim().not().isEmpty().withMessage('Почта или пароль не верны!')]
+    check('password').trim().not().isEmpty().withMessage('Почта или пароль не верны!')
+]
 
 exports.validateResetToken = async (req, res, next) => {
     const { token, id } = req.query

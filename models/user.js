@@ -68,16 +68,16 @@ userSchema.pre('save', function (next) {
     next()
 })
 
-userSchema.methods.comparePassword = password => {
-    bcrypt.compare(password, this.password, (err, result) => {
-        if (err)
-            throw new Error(`Не удалось проверить пароль`)
-
+userSchema.methods.comparePassword = async function (password) {
+    try {
+        const result = await bcrypt.compare(password, this.password)
         return result
-    })
+    } catch (err) {
+        console.log('Ошибка при проверке пароля:', err.message)
+    }
 }
 
-userSchema.statics.isEmailFree = async email => {
+userSchema.statics.isEmailFree = async function (email) {
     if (!email) throw new Error('Поле email пустое')
 
     try {

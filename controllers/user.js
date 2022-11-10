@@ -2,19 +2,19 @@ const mongoose = require('mongoose')
 const { response } = require('express')
 const jwt = require('jsonwebtoken')
 require('dotenv').config()
+const { validationResult } = require('express-validator')
 
 const User = require('../models/user')
 const ResetToken = require('../models/resetToken')
 
-const { sendError } = require('../utils/helper')
+const { resError } = require('../utils/helper')
 
 const { JWT_TOKEN_SECRET } = process.env
 
 exports.getUserById = async (req, res) => {
     const { id } = req.params
-    console.log(id)
 
-    const user = await User.findOne({ _id: mongoose.Types.ObjectId(id) })
+    const user = await User.findOne({ _id: mongoose.Types.ObjectId(id) }).select('email name surname phone dob addreess')
 
     if (!user)
         return res.json({
@@ -36,9 +36,8 @@ exports.getUserById = async (req, res) => {
 
 exports.getUserByEmail = async (req, res) => {
     const { email } = req.params
-    console.log(email)
 
-    const user = await User.findOne({ email })
+    const user = await User.findOne({ email }).select('email name surname phone dob addreess')
 
     if (!user)
         return res.json({
@@ -68,25 +67,36 @@ exports.getUsers = async (req, res) => {
 }
 
 exports.userCreate = async (req, res) => {
+    const errors = validationResult(req)
+    if (!errors.isEmpty()) return resError(res, errors.errors[0].msg) // bad request
+
     const authHeader = req.headers['authorization']
     const token = authHeader && authHeader.split(' ')[1]
+    if (token == null) return resError(res, 'Вы не авторизованы', 401) // unauthorized
+    try {
+        const { _id } = jwt.verify(token, JWT_TOKEN_SECRET)
+        const requester = User.findOne({ _id })
 
-    if (token == null) return sendError(res, '', 401) // unauthorized
+        if (!requester)
+            return resError(res, 'Вы не авторизованы', 401) // unauthorized
 
-    jwt.verify(token, process.env.TOKEN_SECRET, (err, user) => {
-        console.log(err)
+        if (requester.role && (requester.role == 'employee'))
+            return resError(res, 'Недостаточно полномочий', 403) // forbidden
+    } catch (err) {
+        console.log(err.message)
+        return resError(res, 'Произошла ошибка') // bad request
+    }
 
-        if (err) return sendError(res, '', 403) // forbidden
-
-        next()
-    })
+    const { email } = req.body
+    const userExists = await User.findOne({ email })
+    if (userExists)
+        return resError(res, 'Пользователь уже существует') // bad request
 
     const {
         role,
-        email,
         password,
-        firstName,
-        lastName,
+        name,
+        surname,
         phone,
         dob,
         address
@@ -95,14 +105,15 @@ exports.userCreate = async (req, res) => {
         role,
         email,
         password,
-        firstName,
-        lastName,
+        name,
+        surname,
         phone,
         address,
         dob
     })
     await user.save()
 
+    console.log(`user ${email} created`)
     return res.json({
         success: true,
         user
@@ -110,18 +121,24 @@ exports.userCreate = async (req, res) => {
 }
 
 exports.userLogin = async (req, res) => {
-    const { email, password } = req.body
+    const errors = validationResult(req)
+    if (!errors.isEmpty()) return resError(res, errors.errors[0].msg) // bad request
 
-    const wrongEmailOrPassword = sendError(res, 'Почта или пароль не верны', 401) // unathorized
+    const { email, password } = req.body
     const user = await User.findOne({ email })
     if (!user)
-        return wrongEmailOrPassword
+        return resError(res, 'Почта или пароль не верны', 401) // unathorized
     const matched = await user.comparePassword(password)
     if (!matched)
-        return wrongEmailOrPassword
+        return resError(res, 'Почта или пароль не верны', 401) // unathorized
 
-    const token = jwt.sign({ id: user._id }, JWT_TOKEN_SECRET, {
+    const token = jwt.sign({ _id: user._id }, JWT_TOKEN_SECRET, {
         expiresIn: '1d'
     })
-    return res.json(token)
+
+    return res.json({
+        success: true,
+        user,
+        token
+    })
 }
