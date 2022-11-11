@@ -60,12 +60,12 @@ userSchema.pre('save', function (next) {
     if (this.isModified('password')) {
         bcrypt.hash(this.password, parseInt(BCRYPT_SALT_ROUNDS), (err, hash) => {
             if (err)
-                throw new Error('Не удалось хэшировать пароль')
+                console.log(`Не удалось хэшировать пароль пользователя: `, this.email)
 
             this.password = hash
+            next()
         })
     }
-    next()
 })
 
 userSchema.methods.comparePassword = async function (password) {
@@ -78,8 +78,6 @@ userSchema.methods.comparePassword = async function (password) {
 }
 
 userSchema.statics.isEmailFree = async function (email) {
-    if (!email) throw new Error('Поле email пустое')
-
     try {
         const user = await this.findOne({ email })
 

@@ -1,8 +1,13 @@
 const { check, validationResult } = require('express-validator')
 const User = require('../../models/user')
+require('dotenv').config()
+const WebToken = require('../../models/webtoken')
 const ResetToken = require('../../models/resetToken')
 const { isValidObjectId } = require('mongoose')
-const { resError } = require('../../utils/helper')
+const { resError, getBearerToken } = require('../../utils/helper')
+const jwt = require('jsonwebtoken')
+
+const { JWT_TOKEN_SECRET } = process.env
 
 const checkRequiredString = (field, name) => check(field)
     .trim().not().isEmpty().withMessage(`Поле "${name}" обязательное`)
@@ -63,4 +68,43 @@ exports.validateResetToken = async (req, res, next) => {
 
     req.user = user
     next()
+}
+
+exports.isLoggedIn = async (req, res, next) => {
+    const jwtToken = getBearerToken(req)
+    if (jwtToken == undefined) return resError(res, 'Вы не авторизованы', 401) // unauthorized
+    try {
+        const { _id } = await jwt.verify(jwtToken, JWT_TOKEN_SECRET)
+        const wToken = await WebToken.findOne({}, {}, { sort: { 'createdAt': - 1 } })
+        if (!wToken || jwtToken != wToken.token)
+            return resError(res, 'Вы не авторизованы', 401) // unauthorized
+
+        const user = User.findOne({ _id: wToken.owner })
+        if (!user)
+            return resError(res, 'Вы не авторизованы', 401) // unauthorized
+
+        req._id = _id
+        next()
+    } catch (err) {
+        return resError(res, 'Произошла ошибка') // bad request
+    }
+}
+
+exports.notEmployee = async (req, res, next) => {
+    const jwtToken = getBearerToken(req)
+    if (jwtToken == null) return resError(res, 'Вы не авторизованы', 401) // unauthorized    
+    try {
+        const { owner } = jwt.verify(jwtToken, JWT_TOKEN_SECRET)
+        const user = User.findOne({ _id: owner })
+
+        if (!user)
+            return resError(res, 'Вы не авторизованы', 401) // unauthorized
+
+        if (user.role && (user.role == 'employee'))
+            return resError(res, 'Недостаточно полномочий', 403) // forbidden
+
+        next()
+    } catch (err) {
+        return resError(res, 'Произошла ошибка') // bad request
+    }
 }

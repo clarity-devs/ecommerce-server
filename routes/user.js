@@ -7,18 +7,22 @@ const {
     getUserByEmail,
     userCreate,
     userLogin,
+    userLogout
 } = require('../controllers/user')
 const {
     checkValidation,
     validateUserGet,
     validateUserCreation,
-    validateUserLogin
+    validateUserLogin,
+    notEmployee,
+    isLoggedIn
 } = require('../middlewares/validation/user')
 
 router.get('', getUsers)
 router.get('/get', validateUserGet, checkValidation, getUserByEmail)
 
-router.post('/create', validateUserCreation, checkValidation, userCreate)
+router.post('/create', validateUserCreation, checkValidation, notEmployee, userCreate)
 router.post('/login', validateUserLogin, checkValidation, userLogin)
+router.post('/logout', isLoggedIn, userLogout)
 
 module.exports = router

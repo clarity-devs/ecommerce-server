@@ -3,8 +3,10 @@ const { response } = require('express')
 const jwt = require('jsonwebtoken')
 require('dotenv').config()
 const { validationResult } = require('express-validator')
+const bcrypt = require('bcrypt')
 
 const User = require('../models/user')
+const WebToken = require('../models/webtoken')
 const ResetToken = require('../models/resetToken')
 
 const { resError } = require('../utils/helper')
@@ -43,29 +45,9 @@ exports.getUsers = async (req, res) => {
 }
 
 exports.userCreate = async (req, res) => {
-    const errors = validationResult(req)
-    if (!errors.isEmpty()) return resError(res, errors.errors[0].msg) // bad request
-
-    const authHeader = req.headers['authorization']
-    const token = authHeader && authHeader.split(' ')[1]
-    if (token == null) return resError(res, 'Вы не авторизованы', 401) // unauthorized
-    try {
-        const { _id } = jwt.verify(token, JWT_TOKEN_SECRET)
-        const requester = User.findOne({ _id })
-
-        if (!requester)
-            return resError(res, 'Вы не авторизованы', 401) // unauthorized
-
-        if (requester.role && (requester.role == 'employee'))
-            return resError(res, 'Недостаточно полномочий', 403) // forbidden
-    } catch (err) {
-        console.log(err.message)
-        return resError(res, 'Произошла ошибка') // bad request
-    }
-
     const { email } = req.body
-    const userExists = await User.findOne({ email })
-    if (userExists)
+    const emailFree = await User.isEmailFree(email)
+    if (!emailFree)
         return resError(res, 'Пользователь уже существует') // bad request
 
     const {
@@ -88,8 +70,8 @@ exports.userCreate = async (req, res) => {
         dob
     })
     await user.save()
+    console.log(`Пользователь ${email} создан`)
 
-    console.log(`user ${email} created`)
     return res.json({
         success: true,
         user
@@ -97,9 +79,6 @@ exports.userCreate = async (req, res) => {
 }
 
 exports.userLogin = async (req, res) => {
-    const errors = validationResult(req)
-    if (!errors.isEmpty()) return resError(res, errors.errors[0].msg) // bad request
-
     const { email, password } = req.body
     const user = await User.findOne({ email })
     if (!user)
@@ -108,13 +87,28 @@ exports.userLogin = async (req, res) => {
     if (!matched)
         return resError(res, 'Почта или пароль не верны', 401) // unathorized
 
-    const token = jwt.sign({ _id: user._id }, JWT_TOKEN_SECRET, {
-        expiresIn: '1d'
+    await WebToken.deleteMany({ owner: user._id })
+    const tokenVal = jwt.sign({ _id: user._id }, JWT_TOKEN_SECRET)
+    const { iat } = jwt.verify(tokenVal, JWT_TOKEN_SECRET)
+    const wToken = await WebToken({
+        owner: user._id,
+        token: tokenVal,
+        createdAt: iat
     })
+    await wToken.save()
 
     return res.json({
         success: true,
         user,
-        token
+        jwtToken: tokenVal
+    })
+}
+
+exports.userLogout = async (req, res) => {
+    const _id = req._id // from middlewares/validation/user.isLoggedIn()
+    await WebToken.deleteMany({ owner: _id })
+
+    return res.json({
+        success: true
     })
 }
