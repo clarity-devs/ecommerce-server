@@ -11,34 +11,10 @@ const { resError } = require('../utils/helper')
 
 const { JWT_TOKEN_SECRET } = process.env
 
-exports.getUserById = async (req, res) => {
-    const { id } = req.params
-
-    const user = await User.findOne({ _id: mongoose.Types.ObjectId(id) }).select('email name surname phone dob addreess')
-
-    if (!user)
-        return res.json({
-            success: false,
-            message: 'Пользователь не найден'
-        })
-
-    if (user.role != 'employee')
-        return res.json({
-            success: false,
-            message: 'Нет доступа'
-        })
-
-    return res.json({
-        success: true,
-        user
-    })
-}
-
 exports.getUserByEmail = async (req, res) => {
-    const { email } = req.params
-
-    const user = await User.findOne({ email }).select('email name surname phone dob addreess')
-
+    const { email } = req.query
+    const user = await User.findOne({ email })
+        .select('role email name surname phone dob addreess')
     if (!user)
         return res.json({
             success: false,

@@ -2,14 +2,18 @@ const { check, validationResult } = require('express-validator')
 const User = require('../../models/user')
 const ResetToken = require('../../models/resetToken')
 const { isValidObjectId } = require('mongoose')
-const { sendError } = require('../../utils/helper')
+const { resError } = require('../../utils/helper')
 
-const checkRequiredString = field => check(field)
-    .trim().not().isEmpty().withMessage(`Поле обязательное`)
-    .isString().withMessage(`Поле должно быть строкой`)
+const checkRequiredString = (field, name) => check(field)
+    .trim().not().isEmpty().withMessage(`Поле "${name}" обязательное`)
+    .isString().withMessage(`Поле "${name}" должно быть строкой`)
+
+exports.validateUserGet = [
+    check('email').normalizeEmail().isEmail().withMessage('Почта не верна')
+]
 
 exports.validateUserCreation = [
-    checkRequiredString('role').custom((value, { req }) => {
+    checkRequiredString('role', 'роль').custom((value, { req }) => {
         const roles = ['employee', 'owner', 'senior']
         if (!roles.includes(value)) {
             return false
@@ -17,30 +21,24 @@ exports.validateUserCreation = [
         return true
     }).withMessage('Недопустимая роль'),
     check('email').normalizeEmail().toLowerCase().isEmail().withMessage('Неверный формат почты').isString().withMessage('Поле должно быть строкой'),
-    checkRequiredString('password').isLength({ min: 8, max: 20 }).withMessage('Короткий пароль'),
-    checkRequiredString('confirmPassword').custom((value, { req }) => {
+    checkRequiredString('password', 'пароль').isLength({ min: 8, max: 20 }).withMessage('Короткий пароль'),
+    checkRequiredString('confirmPassword', 'пароль').custom((value, { req }) => {
         if (value !== req.body.password) {
-            console.log('Пароли не совпадают')
             return false
         }
         return true
-    }),
-    checkRequiredString('name').isLength({ min: 1, max: 20 }).withMessage('Короткое имя'),
-    checkRequiredString('surname').isLength({ min: 1, max: 20 }).withMessage('Короткая фамилия'),
-    checkRequiredString('phone'),
-    check('dob').optional().trim().not().isEmpty().withMessage('Поле обязательное').isString().withMessage('Поле должно быть строкой')
+    }).withMessage('Пароли не совпадают'),
+    checkRequiredString('name', 'имя').isLength({ min: 1, max: 20 }).withMessage('Короткое имя'),
+    checkRequiredString('surname', 'имя').isLength({ min: 1, max: 20 }).withMessage('Короткая фамилия'),
+    checkRequiredString('phone', 'телефон'),
+    check('dob').optional().trim().not().isEmpty().withMessage('Поле "дата рождения" обязательное').isString().withMessage('Поле "дата рождения" должно быть строкой')
 ]
 
-exports.userValidation = (req, res, next) => {
-    const result = validationResult(req).array()
+exports.checkValidation = (req, res, next) => {
+    const valRes = validationResult(req)
+    if (!valRes.isEmpty()) return resError(res, valRes.errors[0].msg) // bad request
 
-    if (!result.length) return next()
-
-    const error = result[0].msg
-    res.json({
-        success: false,
-        message: error
-    })
+    return next()
 }
 
 exports.validateUserLogin = [
@@ -51,17 +49,17 @@ exports.validateUserLogin = [
 exports.validateResetToken = async (req, res, next) => {
     const { token, id } = req.query
 
-    if (!token || !id) return sendError(res, 'Невалидный запрос!')
-    if (!isValidObjectId(id)) return sendError(res, 'Невалидный пользователь!')
+    if (!token || !id) return resError(res, 'Невалидный запрос!')
+    if (!isValidObjectId(id)) return resError(res, 'Невалидный пользователь!')
 
     const user = await User.findById(id)
-    if (!user) return sendError(res, 'Пользователь не найден!')
+    if (!user) return resError(res, 'Пользователь не найден!')
 
     const resetToken = await ResetToken.findOne({ owner: user._id })
-    if (!resetToken) return sendError(res, 'Токен не найден!')
+    if (!resetToken) return resError(res, 'Токен не найден!')
 
     const isValid = await resetToken.compareToken(token)
-    if (!isValid) return sendError(res, 'Токен не валидный!')
+    if (!isValid) return resError(res, 'Токен не валидный!')
 
     req.user = user
     next()

@@ -8,13 +8,17 @@ const {
     userCreate,
     userLogin,
 } = require('../controllers/user')
-const { validateUserCreation, validateUserLogin } = require('../middlewares/validation/user')
+const {
+    checkValidation,
+    validateUserGet,
+    validateUserCreation,
+    validateUserLogin
+} = require('../middlewares/validation/user')
 
 router.get('', getUsers)
-router.get('/id/:id', getUserById)
-router.get('/email/:email', getUserByEmail)
+router.get('/get', validateUserGet, checkValidation, getUserByEmail)
 
-router.post('/create', validateUserCreation, userCreate)
-router.post('/login', validateUserLogin, userLogin)
+router.post('/create', validateUserCreation, checkValidation, userCreate)
+router.post('/login', validateUserLogin, checkValidation, userLogin)
 
 module.exports = router
