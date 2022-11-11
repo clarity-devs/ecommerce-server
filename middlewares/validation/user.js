@@ -74,16 +74,15 @@ exports.isLoggedIn = async (req, res, next) => {
     const jwtToken = getBearerToken(req)
     if (jwtToken == undefined) return resError(res, 'Вы не авторизованы', 401) // unauthorized
     try {
-        const { _id } = await jwt.verify(jwtToken, JWT_TOKEN_SECRET)
-        const wToken = await WebToken.findOne({}, {}, { sort: { 'createdAt': - 1 } })
-        if (!wToken || jwtToken != wToken.token)
+        const { owner } = await jwt.verify(jwtToken, JWT_TOKEN_SECRET)
+        const wToken = await WebToken.findOne({ owner }, {}, { sort: { 'createdAt': - 1 } })
+        if (!wToken && jwtToken != wToken.token)
             return resError(res, 'Вы не авторизованы', 401) // unauthorized
-
-        const user = User.findOne({ _id: wToken.owner })
+        const user = await User.findOne({ _id: owner })
         if (!user)
             return resError(res, 'Вы не авторизованы', 401) // unauthorized
 
-        req._id = _id
+        req.user = user
         next()
     } catch (err) {
         return resError(res, 'Произошла ошибка') // bad request
@@ -91,20 +90,11 @@ exports.isLoggedIn = async (req, res, next) => {
 }
 
 exports.notEmployee = async (req, res, next) => {
-    const jwtToken = getBearerToken(req)
-    if (jwtToken == null) return resError(res, 'Вы не авторизованы', 401) // unauthorized    
-    try {
-        const { owner } = jwt.verify(jwtToken, JWT_TOKEN_SECRET)
-        const user = User.findOne({ _id: owner })
-
-        if (!user)
-            return resError(res, 'Вы не авторизованы', 401) // unauthorized
-
-        if (user.role && (user.role == 'employee'))
+    exports.isLoggedIn(req, res, () => {
+        const user = req.user
+        if (!user.role || user.role == 'employee')
             return resError(res, 'Недостаточно полномочий', 403) // forbidden
 
         next()
-    } catch (err) {
-        return resError(res, 'Произошла ошибка') // bad request
-    }
+    })
 }

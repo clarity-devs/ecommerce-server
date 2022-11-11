@@ -88,7 +88,7 @@ exports.userLogin = async (req, res) => {
         return resError(res, 'Почта или пароль не верны', 401) // unathorized
 
     await WebToken.deleteMany({ owner: user._id })
-    const tokenVal = jwt.sign({ _id: user._id }, JWT_TOKEN_SECRET)
+    const tokenVal = jwt.sign({ owner: user._id }, JWT_TOKEN_SECRET)
     const { iat } = jwt.verify(tokenVal, JWT_TOKEN_SECRET)
     const wToken = await WebToken({
         owner: user._id,
@@ -105,7 +105,7 @@ exports.userLogin = async (req, res) => {
 }
 
 exports.userLogout = async (req, res) => {
-    const _id = req._id // from middlewares/validation/user.isLoggedIn()
+    const { _id } = req.user // from middlewares/validation/user.isLoggedIn()
     await WebToken.deleteMany({ owner: _id })
 
     return res.json({
