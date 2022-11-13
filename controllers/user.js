@@ -1,13 +1,8 @@
-const mongoose = require('mongoose')
-const { response } = require('express')
 const jwt = require('jsonwebtoken')
 require('dotenv').config()
-const { validationResult } = require('express-validator')
-const bcrypt = require('bcrypt')
 
 const User = require('../models/user')
 const WebToken = require('../models/webtoken')
-const ResetToken = require('../models/resetToken')
 
 const { resError } = require('../utils/helper')
 
@@ -15,33 +10,15 @@ const { JWT_TOKEN_SECRET } = process.env
 
 exports.getUserByEmail = async (req, res) => {
     const { email } = req.query
-    const user = await User.findOne({ email })
-        .select('role email name surname phone dob addreess')
-    if (!user)
-        return res.json({
-            success: false,
-            message: 'Пользователь не найден'
-        })
-
-    if (user.role != 'employee')
-        return res.json({
-            success: false,
-            message: 'Нет доступа'
-        })
-
-    return res.json({
-        success: true,
-        user
-    })
-}
-
-exports.getUsers = async (req, res) => {
-    const users = await User.find({ role: 'employee' }).select('email name surname phone dob addreess')
-
-    return res.json({
-        success: true,
-        users
-    })
+    return User.findOne({ email }).select('role email name surname phone dob')
+        .then(user => {
+            if (user.role != 'employee')
+                return resError(res, 'Нет доступа', 403) // forbidden
+            return res.json({
+                success: true,
+                user
+            })
+        }).catch(() => resError(res, 'Пользователь не найден')) // bad request
 }
 
 exports.userCreate = async (req, res) => {
@@ -50,32 +27,19 @@ exports.userCreate = async (req, res) => {
     if (!emailFree)
         return resError(res, 'Пользователь уже существует') // bad request
 
-    const {
-        role,
-        password,
-        name,
-        surname,
-        phone,
-        dob,
-        address
-    } = req.body
-    const user = await User({
-        role,
-        email,
-        password,
-        name,
-        surname,
-        phone,
-        address,
-        dob
-    })
-    await user.save()
-    console.log(`Пользователь ${email} создан`)
+    const fields = { role, password, name, surname, phone, dob } = req.body
+    const user = await User({ ...fields })
+    return user.save().then(() => {
+        console.log(`Пользователь ${email} создан`)
 
-    return res.json({
-        success: true,
-        user
-    })
+        return res.json({
+            success: true,
+            user
+        })
+    }).catch(() => res.json({
+        success: false,
+        message: 'Не удалось'
+    }))
 }
 
 exports.userLogin = async (req, res) => {
@@ -95,13 +59,12 @@ exports.userLogin = async (req, res) => {
         token: tokenVal,
         createdAt: iat
     })
-    await wToken.save()
 
-    return res.json({
+    return wToken.save().then(() => res.json({
         success: true,
         user,
         jwtToken: tokenVal
-    })
+    })).catch(() => resError(res, 'Не удалось авторизоваться'))
 }
 
 exports.userLogout = async (req, res) => {

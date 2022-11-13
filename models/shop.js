@@ -1,6 +1,7 @@
 const mongoose = require('mongoose')
 
 const shopSchema = mongoose.Schema({
+    name: String,
     address: {
         type: {
             city: {
@@ -24,5 +25,10 @@ const shopSchema = mongoose.Schema({
     }
 })
 
-module.exports = shopSchema
-// module.exports = mongoose.model('Shop', shopSchema)
+shopSchema.pre('save', function (next) {
+    this.updatedAt = Date.now()
+
+    next()
+})
+
+module.exports = mongoose.model('Shop', shopSchema)

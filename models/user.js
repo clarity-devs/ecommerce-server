@@ -5,54 +5,29 @@ require('dotenv').config()
 const { BCRYPT_SALT_ROUNDS } = process.env
 
 const userSchema = new mongoose.Schema({
-    role: {
-        type: String,
-        required: true
-    }, // senior || employee || owner
+    // senior || employee || owner:
+    role: { type: String, required: true },
     email: {
         type: String,
         required: true,
         unique: true
     },
-    password: {
-        type: String,
-        required: true
-    },
-    name: {
-        type: String,
-        required: true
-    },
-    surname: {
-        type: String,
-        required: true
-    },
-    phone: {
-        type: String,
-        required: true
-    },
+    password: { type: String, required: true },
+    name: { type: String, required: true },
+    surname: { type: String, required: true },
+    phone: { type: String, required: true },
     dob: Date, // date of birth
-    address: {
-        type: {
-            city: {
-                type: String,
-                required: true
-            },
-            street: {
-                type: String,
-                required: true
-            }
-        },
-        required: false
+    shifts: {
+        type: [{
+            type: mongoose.SchemaTypes.ObjectId,
+            ref: 'Shift',
+            required: true
+        }],
+        required: true,
+        default: []
     },
-    tokens: [mongoose.SchemaTypes.ObjectId],
-    updatedAt: {
-        type: Date,
-        default: Date.now()
-    },
-    createdAt: {
-        type: Date,
-        default: Date.now()
-    }
+    updatedAt: { type: Date, default: Date.now() },
+    createdAt: { type: Date, default: Date.now() }
 })
 
 // middleware activated when saved
@@ -63,9 +38,12 @@ userSchema.pre('save', function (next) {
                 console.log(`Не удалось хэшировать пароль пользователя: `, this.email)
 
             this.password = hash
-            next()
         })
     }
+
+    this.updatedAt = Date.now()
+
+    next()
 })
 
 userSchema.methods.comparePassword = async function (password) {

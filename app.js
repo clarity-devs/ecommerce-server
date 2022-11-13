@@ -2,6 +2,11 @@ const express = require('express')
 require('./database')
 
 const userRouter = require('./routes/user')
+const shopRouter = require('./routes/shop')
+const shiftRouter = require('./routes/shift')
+const termRouter = require('./routes/term')
+const wageRouter = require('./routes/wage')
+const taskRouter = require('./routes/task')
 
 const app = express()
 const port = 8001
@@ -26,6 +31,11 @@ app.use((req, res, next) => {
 // saves in req.body data of request body*
 app.use(express.json())
 app.use('/user', userRouter)
+app.use('/shop', shopRouter)
+app.use('/shift', shiftRouter)
+app.use('/term', termRouter)
+app.use('/wage', wageRouter)
+app.use('/task', taskRouter)
 
 app.get('/', (req, res) => {
     res.send('<h1>Ecommerce server</h1>')

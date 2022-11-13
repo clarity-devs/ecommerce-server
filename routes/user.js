@@ -1,24 +1,24 @@
 const express = require('express')
-const router = express.Router()
 
 const {
-    getUsers,
-    getUserById,
     getUserByEmail,
     userCreate,
     userLogin,
     userLogout
 } = require('../controllers/user')
+const { checkValidation } = require('../middlewares/validation')
 const {
-    checkValidation,
     validateUserGet,
     validateUserCreation,
     validateUserLogin,
+} = require('../middlewares/validation/user')
+const {
     notEmployee,
     isLoggedIn
-} = require('../middlewares/validation/user')
+} = require('../middlewares/verification/user')
 
-router.get('', getUsers)
+const router = express.Router()
+
 router.get('/get', validateUserGet, checkValidation, getUserByEmail)
 
 router.post('/create', validateUserCreation, checkValidation, notEmployee, userCreate)

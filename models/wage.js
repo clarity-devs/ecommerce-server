@@ -1,15 +1,16 @@
+const { Decimal128 } = require('mongodb')
 const mongoose = require('mongoose')
 
 const wageSchema = mongoose.Schema({
-    updatedAt: {
-        type: Date,
-        default: Date.now()
-    },
-    createdAt: {
-        type: Date,
-        default: Date.now()
-    }
+    payment: { type: Decimal128, required: true },
+    updatedAt: { type: Date, default: Date.now() },
+    createdAt: { type: Date, default: Date.now() }
 })
 
-module.exports = wageSchema
-// module.exports = mongoose.model('Wage', wageSchema)
+wageSchema.pre('save', function (next) {
+    this.updatedAt = Date.now()
+
+    next()
+})
+
+module.exports = mongoose.model('Wage', wageSchema)
