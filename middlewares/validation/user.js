@@ -6,32 +6,32 @@ const { isValidObjectId } = require('mongoose')
 const { resError } = require('../../utils/helper')
 
 const checkRequiredString = (field, name) => check(field)
-    .trim().not().isEmpty().withMessage(`Поле "${name}" обязательное`)
-    .isString().withMessage(`Поле "${name}" должно быть строкой`)
+    .exists().withMessage(`Поле ${name} обязательное`)
+    .trim().not().isEmpty().withMessage(`Поле ${name} не может быть пустым`)
+    .isString().withMessage(`Поле ${name} должно быть строкой`)
 
 exports.validateUserGet = [
     check('email').normalizeEmail().isEmail().withMessage('Почта не верна')
 ]
 
 exports.validateUserCreation = [
-    checkRequiredString('role', 'роль').custom((value, { req }) => {
+    checkRequiredString('role', 'роли').custom(role => {
         const roles = ['employee', 'owner', 'senior']
-        if (!roles.includes(value)) {
-            return false
-        }
-        return true
+        return roles.includes(role)
     }).withMessage('Недопустимая роль'),
-    check('email').normalizeEmail().toLowerCase().isEmail().withMessage('Неверный формат почты').isString().withMessage('Поле должно быть строкой'),
-    checkRequiredString('password', 'пароль').isLength({ min: 8, max: 20 }).withMessage('Слишком короткий пароль'),
-    checkRequiredString('confirmPassword', 'пароль').custom((value, { req }) => {
-        if (value !== req.body.password) {
-            return false
-        }
-        return true
-    }).withMessage('Пароли не совпадают'),
-    checkRequiredString('name', 'имя').isLength({ min: 1, max: 20 }).withMessage('Короткое имя'),
-    checkRequiredString('surname', 'имя').isLength({ min: 1, max: 20 }).withMessage('Короткая фамилия'),
-    checkRequiredString('phone', 'телефон'),
+    check('email').exists().withMessage('Поле почты обязательное')
+        .isEmail().withMessage('Неверный формат почты')
+        .isString().withMessage('Поле должно быть строкой'),
+    checkRequiredString('password', 'пароля').isLength({ min: 8, max: 20 }).withMessage('Слишком короткий пароль'),
+    checkRequiredString('confirmPassword', 'повторного пароля')
+        .custom(
+            (value, { req }) => value == req.body.password
+        ).withMessage('Пароли не совпадают'),
+    checkRequiredString('name', 'имени')
+        .isLength({ min: 1, max: 20 }).withMessage('Короткое имя'),
+    checkRequiredString('surname', 'фамилии')
+        .isLength({ min: 1, max: 20 }).withMessage('Короткая фамилия'),
+    checkRequiredString('phone', 'телефона'),
     check('dob').optional().isDate().withMessage('Поле dob должно быть датой')
 ]
 

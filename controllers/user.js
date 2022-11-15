@@ -33,8 +33,7 @@ exports.userCreate = async (req, res) => {
         console.log(`Пользователь ${email} создан`)
 
         return res.json({
-            success: true,
-            user
+            success: true
         })
     }).catch(() => res.json({
         success: false,

@@ -1,4 +1,5 @@
 const Shop = require('../models/shop')
+const { resError } = require('../utils/helper')
 
 exports.shopCreate = async (req, res) => {
     const fields = { name, address, } = req.body
@@ -10,13 +11,8 @@ exports.shopCreate = async (req, res) => {
             `Магазин по адресу ${street}, г. ${city} был создан`
         console.log(text)
 
-        return res.json({
-            success: true
-        })
-    }).catch(err => res.json({
-        success: false,
-        message: err
-    }))
+        return res.json({ success: true })
+    }).catch(() => resError(res, 'Не удалось создать магазин', 500)) // Internal server error
 }
 
 exports.shopDelete = async (req, res) => {
@@ -31,8 +27,5 @@ exports.shopDelete = async (req, res) => {
         return res.json({
             success: true,
         })
-    }).catch(() => res.json({
-        success: false,
-        message: 'Не удалось удалить магазин'
-    }))
+    }).catch(() => resError(res, 'Не удалось удалить магазин'))
 }

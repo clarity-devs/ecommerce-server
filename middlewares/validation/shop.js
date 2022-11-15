@@ -8,7 +8,3 @@ exports.validateShopCreation = [
     check('address.street').trim().not().isEmpty().withMessage(`Поле улицы обязательное`)
         .isString().withMessage(`Поле улицы должно быть строкой`),
 ]
-
-exports.validateShopDeletion = [
-    check('_id').exists().withMessage('Поле идентификатора обязательное')
-]
