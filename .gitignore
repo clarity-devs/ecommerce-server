@@ -151,3 +151,6 @@ Session.vim
 tags
 
 # End of https://www.gitignore.io/api/node,vim,git,macos,linux,sublimetext
+
+# vscode workspace
+ecommerce-server.code-workspace

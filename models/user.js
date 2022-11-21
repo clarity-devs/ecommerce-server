@@ -55,6 +55,11 @@ userSchema.methods.comparePassword = async function (password) {
     }
 }
 
+userSchema.methods.getSafeInfo = function () {
+    const { password, updatedAt, createdAt, shifts, ...safeUserInfo } = this._doc
+    return safeUserInfo
+}
+
 userSchema.statics.isEmailFree = async function (email) {
     try {
         const user = await this.findOne({ email })

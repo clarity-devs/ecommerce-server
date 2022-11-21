@@ -1,6 +1,6 @@
-exports.resError = (res, message, status = 400) => {
+exports.resError = (res, message) => {
     console.log('resError', message)
-    res.status(status).json({ success: false, message })
+    res.json({ success: false, message })
 }
 
 exports.getBearerToken = req => {

@@ -1,16 +1,19 @@
 const { check } = require('express-validator')
 
-const checkRequiredDate = (field, name) => check(field)
+const checkRequiredTime = (field, name) => check(field)
     .exists().withMessage(`Поле ${name} обязательное`)
-    .custom(value => {
-        try {
-            const date = new Date(value)
-            return date instanceof Date && !isNaN(date)
-        } catch (e) {
+    .custom(time => {
+        const { hour, minute } = time
+        if (!(hour && minute))
             return false
-        }
-    }).withMessage(`Неверный формат поля ${name}`)
+
+        if (!(0 <= hour <= 23 && 0 <= minute <= 59))
+            return false
+
+        return true
+    }).withMessage(`Неверный формат ${name}`)
+
 exports.validateTermCreation = [
-    checkRequiredDate('startDate', 'начальной даты'),
-    checkRequiredDate('endDate', 'конечной даты')
+    checkRequiredTime('startTime', 'начального времени'),
+    checkRequiredTime('endTime', 'конечного времени')
 ]

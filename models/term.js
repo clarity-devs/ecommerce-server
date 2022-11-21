@@ -1,8 +1,24 @@
 const mongoose = require('mongoose')
 
+const Time = {
+    hour: {
+        type: Number,
+        min: 0,
+        max: 23,
+        required: true
+    },
+    minute: {
+        type: Number,
+        min: 0,
+        max: 59,
+        default: 0,
+        required: true
+    }
+}
+
 const termSchema = mongoose.Schema({
-    startDate: { type: Date, required: true },
-    endDate: { type: Date, required: true },
+    startTime: { type: Time, required: true },
+    endTime: { type: Time, required: true },
     updatedAt: { type: Date, default: Date.now() },
     createdAt: { type: Date, default: Date.now() }
 })
