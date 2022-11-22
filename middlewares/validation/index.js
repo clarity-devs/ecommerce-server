@@ -3,10 +3,9 @@ const { resError } = require('../../utils/helper')
 
 exports.checkValidation = (req, res, next) => {
     const valRes = validationResult(req)
-    console.log(valRes.errors[0])
-    if (!valRes.isEmpty()) return resError(res, valRes.errors[0].msg)
 
-    next()
+    if (valRes.isEmpty()) return next()
+    return resError(res, valRes.errors[0].msg)
 }
 
 exports.validateDeletion = [

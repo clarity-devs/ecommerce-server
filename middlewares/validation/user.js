@@ -18,7 +18,7 @@ exports.validateUserCreation = [
     check('email').exists().withMessage('Поле почты обязательное')
         .isEmail().withMessage('Неверный формат почты')
         .isString().withMessage('Поле должно быть строкой'),
-    checkRequiredString('password', 'пароля').isLength({ min: 8, max: 20 }).withMessage('Слишком короткий пароль'),
+    checkRequiredString('password', 'пароля').isLength({ min: 8 }).withMessage('Слишком короткий пароль'),
     checkRequiredString('confirmPassword', 'повторного пароля')
         .custom(
             (value, { req }) => value == req.body.password

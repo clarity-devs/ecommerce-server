@@ -1,5 +1,6 @@
 const mongoose = require('mongoose')
 const bcrypt = require('bcrypt')
+const { Timestamp } = require('mongodb')
 require('dotenv').config()
 
 const { BCRYPT_SALT_ROUNDS } = process.env
@@ -31,14 +32,15 @@ const userSchema = new mongoose.Schema({
 })
 
 // middleware activated when saved
-userSchema.pre('save', function (next) {
+userSchema.pre('save', async function (next) {
     if (this.isModified('password')) {
-        bcrypt.hash(this.password, parseInt(BCRYPT_SALT_ROUNDS), (err, hash) => {
-            if (err)
-                console.log(`Не удалось хэшировать пароль пользователя: `, this.email)
-
+        try {
+            const hash = await bcrypt.hash(this.password, parseInt(BCRYPT_SALT_ROUNDS))
             this.password = hash
-        })
+        } catch (err) {
+            console.log(`Не удалось хэшировать пароль пользователя ${this.email}`)
+            return next(err)
+        }
     }
 
     this.updatedAt = Date.now()
