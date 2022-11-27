@@ -10,7 +10,7 @@ const { JWT_TOKEN_SECRET } = process.env
 
 exports.getAllUsers = async (req, res) => {
     return User.find()
-        .then(users => res.json({ users }))
+        .then(users => res.json({ success: true, users }))
         .catch(() => resError(res, 'Не удалось получить пользователей'))
 }
 
@@ -48,7 +48,7 @@ exports.userCreate = async (req, res) => {
         })
     }).catch(() => res.json({
         success: false,
-        message: 'Не удалось'
+        message: 'Не удалось создать пользователя'
     }))
 }
 
@@ -72,11 +72,13 @@ exports.userLogin = async (req, res) => {
 
     const safeUserInfo = user.getSafeInfo()
 
-    return wToken.save().then(() => res.json({
-        success: true,
-        user: safeUserInfo,
-        jwtToken: tokenVal
-    })).catch(() => resError(res, 'Не удалось авторизоваться'))
+    return wToken.save().then(() => {
+        return res.json({
+            success: true,
+            user: safeUserInfo,
+            jwtToken: tokenVal
+        })
+    }).catch(() => resError(res, 'Не удалось авторизоваться'))
 }
 
 exports.userLogout = async (req, res) => {
@@ -96,4 +98,14 @@ exports.userAuthenticate = async (req, res) => {
         success: true,
         user: safeUserInfo
     })
+}
+
+exports.userDelete = async (req, res) => {
+    const { _id } = req.body
+    return User.findByIdAndDelete(_id).then(doc => {
+        const { email } = doc
+        console.log(`Удален пользователь ${email}`)
+
+        return res.json({ success: true })
+    }).catch(() => resError(res, 'Не удалось удалить пользователя'))
 }

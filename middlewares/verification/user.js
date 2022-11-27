@@ -10,7 +10,7 @@ exports.isLoggedIn = async (req, res, next) => {
     const jwtToken = getBearerToken(req)
     if (jwtToken == undefined) return resError(res, 'Вы не авторизованы')
     try {
-        const { owner } = await jwt.verify(jwtToken, JWT_TOKEN_SECRET)
+        const { owner } = jwt.verify(jwtToken, JWT_TOKEN_SECRET)
         const wToken = await WebToken.findOne({ owner }, {}, { sort: { 'createdAt': - 1 } })
         if (!wToken && jwtToken != wToken.token)
             return resError(res, 'Вы не авторизованы')

@@ -1,15 +1,15 @@
 const { Router } = require('express')
-const express = require('express')
 
 const {
     getAllUsers,
     getUserByEmail,
     userCreate,
+    userDelete,
     userLogin,
     userLogout,
     userAuthenticate
 } = require('../controllers/user')
-const { checkValidation } = require('../middlewares/validation')
+const { checkValidation, validateDeletion } = require('../middlewares/validation')
 const {
     validateUserGet,
     validateUserCreation,
@@ -20,12 +20,13 @@ const {
     isLoggedIn
 } = require('../middlewares/verification/user')
 
-const router = express.Router()
+const router = Router()
 
 router.post('/get/all', notEmployee, getAllUsers)
 router.get('/get/email', validateUserGet, checkValidation, getUserByEmail)
 
 router.put('/create', validateUserCreation, checkValidation, notEmployee, userCreate)
+router.delete('/delete', validateDeletion, checkValidation, notEmployee, userDelete)
 router.post('/login', validateUserLogin, checkValidation, userLogin)
 router.post('/logout', isLoggedIn, userLogout)
 router.post('/authenticate', isLoggedIn, userAuthenticate)

@@ -4,7 +4,7 @@ exports.resError = (res, message) => {
 }
 
 exports.getBearerToken = req => {
-    const authHeader = req.headers['authorization']
+    const authHeader = req.headers.authorization
     const wToken = authHeader && authHeader.split(' ')[1]
     return wToken
 }
